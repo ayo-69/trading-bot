@@ -13,10 +13,19 @@ import (
 	"github.com/ayo-69/trading-bot/internal/risk"
 	"github.com/ayo-69/trading-bot/internal/strategy"
 	"github.com/ayo-69/trading-bot/internal/types"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	candles, err := data.LoadCSV("data/BTCUSDT_1m_large.csv")
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Could not load environment variables")
+	}
+	dataSrcFile := os.Getenv("DATA_SRC_FILE")
+	if dataSrcFile == "" {
+		log.Fatalf("DATA_SRC_FILE environment variable not set")
+	}
+	candles, err := data.LoadCSV(dataSrcFile)
 	if err != nil {
 		log.Fatalf("failed to load data: %v", err)
 	}
@@ -28,7 +37,11 @@ func main() {
 	engine := backtest.NewEngine(exch, strat, rm)
 	equity := engine.Run(candles)
 
-	if err := writeTrades("trades.csv", exch.Trades); err != nil {
+	tradesFile := os.Getenv("TRADES_FILE")
+	if tradesFile == "" {
+		log.Fatalf("TRADES_FILE environment variable not set")
+	}
+	if err := writeTrades(tradesFile, exch.Trades); err != nil {
 		log.Fatalf("failed to write trades: %v", err)
 	}
 
